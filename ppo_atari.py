@@ -94,7 +94,7 @@ def parse_args():
     parser.add_argument("--vf-coef", type=float, default=0.5,
         help="value loss coefficient (c1)")
     parser.add_argument("--truncation", action=argparse.BooleanOptionalAction, default=True,
-        help="at time limits, bootstrap with gamma * V(final_obs) and mark the episode boundary (A+B); --no-truncation = ignore it")
+        help="time limits always end the episode (boundary). --truncation: also add gamma * V(final_obs) to the reward (A+B); --no-truncation: no bootstrap, i.e. treat the time limit as termination (CleanRL / baselines)")
     # fmt: on
     args = parser.parse_args()
 
@@ -292,9 +292,12 @@ if __name__ == "__main__":
             state, reward, terminated, truncated, info = envs.step(action.cpu().numpy())
             state = torch.as_tensor(state, dtype=torch.uint8).to(device)
             reward = torch.as_tensor(reward, dtype=torch.float32).to(device)
-            boundary = terminated
+            boundary = (
+                terminated | truncated
+            )  # treat truncation also as a episodic boundary
             truncated_not_terminated = truncated & ~terminated
             if args.truncation and truncated_not_terminated.any():
+                # use the correct terminal state to bootstrap
                 final_obs = torch.as_tensor(
                     np.stack(info["final_obs"][truncated_not_terminated]),
                     dtype=obs.dtype,
@@ -303,9 +306,6 @@ if __name__ == "__main__":
                     reward[truncated_not_terminated] += args.gamma * agent.get_value(
                         final_obs
                     )
-                boundary = (
-                    terminated | truncated
-                )  # treat truncation also as a episodic boundary
 
             done = torch.as_tensor(boundary, dtype=dones.dtype).to(device)
             rewards[step] = reward
