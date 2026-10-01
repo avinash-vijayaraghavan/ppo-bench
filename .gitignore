@@ -1,0 +1,12 @@
+# environment (recreate with `uv sync`)
+.venv/
+__pycache__/
+
+# training outputs: TensorBoard event files, episodes.csv, checkpoints, videos (13 MB+ and growing)
+runs/
+wandb/
+*.log
+*.mp4
+
+# personal discussion log (kept local)
+notes.txt

@@ -1,0 +1,7 @@
+# Mirror of pyproject.toml (the source of truth; `uv sync` / `uv run` use it). For pip-only setups: pip install -r requirements.txt
+gymnasium[classic-control,mujoco,atari,other]==1.3.0
+torch==2.14.0
+numpy
+wandb
+tensorboard
+stable-baselines3
