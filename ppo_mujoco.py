@@ -222,7 +222,7 @@ if __name__ == "__main__":
     torch.backends.cudnn.deterministic = args.torch_deterministic
     device = torch.device("cuda" if torch.cuda.is_available() and args.cuda else "cpu")
 
-    run_name = f"{args.env_id}__{args.exp_name}__{args.seed}__{int(time.time())}"
+    run_name = f"{args.env_id.replace('/', '-')}__{args.exp_name}__{args.seed}__{int(time.time())}"  # ALE/Pong-v5 -> ALE-Pong-v5 (no nested dirs)
     if args.track:
         import wandb
 
@@ -270,7 +270,7 @@ if __name__ == "__main__":
     global_step = 0  # env steps so far, summed over envs (the x-axis for logging)
     start_time = time.time()
 
-    episode_log = open(f"runs/{run_name}/episodes.csv", "w")
+    episode_log = open(f"runs/{run_name}/episodes.csv", "w", buffering=1)  # line-buffered: readable mid-run
     episode_log.write("global_step,episodic_return,episodic_length\n")
     recent_returns = deque(maxlen=100)
 
@@ -451,7 +451,12 @@ if __name__ == "__main__":
     # save the trained policy + the observation-normalization stats it was trained with (needed to run it later)
     obs_rms = envs.envs[0].get_wrapper_attr("obs_rms")
     torch.save(
-        {"agent": agent.state_dict(), "obs_mean": obs_rms.mean, "obs_var": obs_rms.var, "args": vars(args)},
+        {
+            "agent": agent.state_dict(),
+            "obs_mean": obs_rms.mean,
+            "obs_var": obs_rms.var,
+            "args": vars(args),
+        },
         f"runs/{run_name}/agent.pt",
     )
     print(f"saved runs/{run_name}/agent.pt")
